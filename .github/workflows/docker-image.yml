@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
+        
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v2"
@@ -24,54 +24,23 @@ jobs:
      
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
-
+        
       - name: Configure Project
         run: |
           gcloud config set project ace-team-nilsu-service
       
       - name: Authenticate Docker with GCP Artifact Registry
         run: gcloud auth configure-docker europe-west3-docker.pkg.dev
-
+        
       - name: Build Docker Image
         run: docker build -t europe-west3-docker.pkg.dev/ace-team-nilsu-service/helloworld-images/hello-world:latest .
      
-     # - name: Install required components
-     #   run: |
-     #    gcloud components install beta --quiet
-
-  create-directory:
-      runs-on: ubuntu-latest
-      steps:
-      - name: Debug SSH Setup
+      - name: Create Directory via IAP Tunnel
         run: |
-          echo "Setting up SSH directory..."
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          echo "Checking SSH key..."
-          ssh-keygen -l -f ~/.ssh/deploy_key || echo "Invalid key format" 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          
-      - name: Create Directory
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
-            mkdir -p /denem-dir"    
-          
-       #SSH bağlantısı ve container güncelleme
-      #- name: SSH into VM and update container
-      #  env:
-      #    VM_NAME: ${{ secrets.GCP_VM_NAME }}
-      #    VM_ZONE: ${{ secrets.GCP_VM_ZONE }}
-      #  run: |
-      #    gcloud compute ssh $VM_NAME \
-      #      --zone=$VM_ZONE \
-      #      --tunnel-through-iap \
-      #      --command="
-      #        sudo mkdir -p nilsu && \
-      #        sudo touch nilsu/test2.yaml"
-     # - name: Push Docker Image to Artifact Registry
-     #   run: docker push europe-west3-docker.pkg.dev/ace-team-nilsu-service/helloworld-images/hello-world:latest
+          gcloud compute ssh test-nilsu \
+            --zone=europe-west3-c \
+            --tunnel-through-iap \
+            --command="sudo mkdir -p /mert-vm"
+            
+      - name: Push Docker Image to Artifact Registry
+        run: docker push europe-west3-docker.pkg.dev/ace-team-nilsu-service/helloworld-images/hello-world:latest
